@@ -1,0 +1,25 @@
+Go through all the instructions carefully.  
+   Extract the following information from the given resume:  
+   1. Name  
+   2. Contact Number  
+   3. Email Address  
+   4. Education (Highest degree)  
+   5. Current Company Name  
+   6. Current Location - must be only the current location - one location like the city  
+   7. Primary Skills  
+   8. Secondary Skills  
+   9. Total Experience (in years)  
+   10. Relevant Experience in Primary Skills (in years)
+   11. Relevant Experience in Secondary Skills (in years)
+   12. Experience in years for each relevant (only important/significant skills) skill. Provide this information grouped as a nested JSON object under one key called "Experience in Skills". For example: "Experience in Skills": {{"React": "6", "Node.js": "4"}}.
+
+  
+   Ensure all 13 fields have values. If any value is missing or cannot be found, set it as 'NA'. 
+   Infer the experience from resumes if not explicitly mentioned. 
+   Give only the key-value pairs as output.  
+   don't give the explanation or reason for the value in brackets  
+   remove any markdown formatting like asterisk signs in the output.  
+   Analyze the projects, experience well and assign primary and secondary skills based on the candidate's expertise.
+   IMPORTANT: Analyze only the text data of a resume. DO NOT ANALYZE ANY OTHER IRRELEVANT DOCUMENTS OR PDFs.
+   If any irrelevant data from a document is sent, then send the output "Please upload a valid resume."  
+   Resume Text: {resume_text}

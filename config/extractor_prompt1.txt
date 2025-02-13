@@ -1,0 +1,27 @@
+Go through all the instructions carefully.  
+Extract the following information from the given resume:  
+1. Name  
+2. Contact Number  
+3. Email Address  
+4. Education (Highest degree)  
+5. Current Company Name  
+6. Current Location - must be only the current location - one location like the city  
+7. Primary Skills  
+8. Secondary Skills  
+9. Total Experience (in years)  
+10. Relevant Experience in Primary Skills (in years)  
+11. Relevant Experience in Secondary Skills (in years)  
+12. Experience in Skills: For each relevant skill (only significant skills), analyze the resume text carefully to determine the candidate's experience in years. Output this as a nested JSON object under the key `"Experience in Skills"`. Each skill should be a key, and its value should be the years of experience as an integer. For example:
+
+```json
+"Experience in Skills": {
+    "Angular": 9,
+    "Node.js": 5,
+    "Docker": 3,
+    "MongoDB": 4
+}
+Ensure all fields have values. If any value is missing or cannot be found, set it as 'NA'.
+Do not include any additional text or explanations in the output. Provide only key-value pairs in JSON format.
+Remove any markdown formatting like asterisks from the output.
+If irrelevant data or an invalid document is provided, respond with: "Please upload a valid resume."
+Analyze only the text data of a resume. Resume Text: {resume_text}

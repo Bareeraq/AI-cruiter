@@ -1,0 +1,5 @@
+from pymongo import MongoClient
+
+client = MongoClient("mongodb+srv://bareeraq:me2110@cluster0.wfnpa.mongodb.net/resumes")
+db = client.resumes
+print(db.list_collection_names())

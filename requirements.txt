@@ -1,0 +1,14 @@
+# DO NOT include azure-functions-worker in this file
+# The Python Worker is managed by Azure Functions platform
+# Manually managing azure-functions-worker may cause unexpected issues
+
+azure-functions
+Flask==2.3.0
+Flask-Cors==3.0.10
+pymongo==4.4.0
+google-generativeai==0.8.3
+python-dotenv==0.21.0
+PyPDF2
+python-docx
+markdown
+gunicorn

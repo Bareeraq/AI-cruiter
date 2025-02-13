@@ -1,0 +1,715 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+   <meta charset="UTF-8">  
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+   <title>Resume Parsing and CRUD Operations</title>  
+   <!-- Add marked.js CDN script before your custom scripts -->
+   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">  
+   <style>  
+      .container {  
+        margin-top: 50px;  
+      }  
+      .upload-btn {  
+        display: flex;  
+        justify-content: center;  
+        align-items: center;  
+        height: 100px;  
+        border: 2px dashed #007bff;  
+        border-radius: 10px;  
+        cursor: pointer;  
+        margin-bottom: 10px;  
+      }  
+      .file-name, .folder-name {  
+        font-size: 1.2rem;  
+        font-weight: bold;  
+      }  
+      .loading-spinner {  
+        display: none;  
+        margin-top: 20px;  
+      }  
+      #output {  
+        display: none;  
+        margin-top: 20px;  
+      }  
+
+      .json-output {
+         background-color: #f8f9fa;  
+         padding: 10px;  
+         border: 1px solid #ddd;  
+         border-radius: 5px;  
+         white-space: pre-wrap;  
+         max-height: 300px;  /* Set a maximum height */
+         overflow-y: auto;   /* Enable vertical scrolling */
+         overflow-x: auto;   /* Enable horizontal scrolling if needed */
+      }
+
+      .best-fit-output {  
+         background-color: yellow;  
+         padding-bottom: 100px;
+         padding-top: 100px;
+         max-height: 400px; /* Adjust this value to control the height */
+         overflow-y: scroll;
+         overflow-x: hidden; /* Hides horizontal scrolling */
+         border: 1px solid #ccc; /* Optional: adds a border for better visibility */
+      }
+      .scrollable-box {
+         width: 100%;
+         max-height: 300px;  /* Adjust height as needed */
+         overflow-y: auto;
+         border: 1px solid #ccc;
+         padding: 10px;
+         background-color: #e0e0e0;
+      }
+      #bestFitOutput {
+         border: 1px solid red; /* Debug: Check if the element renders */
+         margin-top: 20px;
+     }
+     
+      @media (max-width: 576px) {
+         .scrollable-box, .best-fit-output {
+            max-height: 200px;
+         }
+     }
+     
+   </style>
+</head>  
+
+<body>  
+  
+<div class="container">  
+
+   <!-- Section 1: Resume Parsing -->
+   <h1 class="text-center">Resume Parsing</h1> 
+   
+   <div class="row justify-content-center mt-5">  
+      <div class="col-md-6">  
+         <form id="uploadForm" class="p-4 border rounded shadow" enctype="multipart/form-data">  
+            <div class="mb-3">  
+               <label for="fileUpload" class="form-label">Upload Single File</label>  
+               <div class="upload-btn" onclick="document.getElementById('fileUpload').click();">  
+                  <p class="text-muted">Click to select a PDF or DOCX file</p>  
+               </div>  
+               <input type="file" id="fileUpload" class="file-upload" accept=".pdf,.docx,.word" onchange="showFileName('file')" style="display:none;">  
+               <small id="fileName" class="form-text file-name">No file selected</small>  
+            </div>  
+            
+            <hr>  
+   
+            <div class="mb-3">  
+               <label for="folderUpload" class="form-label">Upload Folder with Multiple Files</label>  
+               <div class="upload-btn" onclick="document.getElementById('folderUpload').click();">  
+                  <p class="text-muted">Click to select a folder with PDF or DOCX files</p>  
+               </div>  
+               <input type="file" id="folderUpload" class="folder-upload" webkitdirectory multiple onchange="showFileName('folder')" style="display:none;">  
+               <small id="folderName" class="form-text folder-name">No folder selected</small>  
+            </div> 
+            
+            <div class="mb-3">
+               <label for="max_threads" class="form-label">Maximum Threads (1-10)</label>
+               <input type="number" id="max_threads" name="max_threads" class="form-control" min="1" max="10" required>
+            </div>
+
+            <div class="mb-3">  
+               <label for="storeOption" class="form-label"><b>Do you want to store the parsed Data in MongoDB?</label>  
+               <select id="storeOption" class="form-select" aria-label="Select whether to store data">  
+                  <option value="yes">YES</option>  
+                  <option value="no" selected>NO</option>  
+               </select>  
+            </div>  
+   
+            <button type="button" class="btn btn-primary w-100 mt-3" onclick="startParsing()">Upload & Parse Resume</button>  
+         </form>  
+   
+         <!-- Loading Spinner -->  
+         <div id="loadingSpinner" class="loading-spinner text-center">  
+            <div class="spinner-border text-primary" role="status">  
+               <span class="visually-hidden">Loading...</span>  
+            </div>  
+            <p>Resume is being parsed...</p>  
+         </div>  
+   
+         <!-- Parsed Resume Output -->  
+         <div id="output">  
+            <h5 class="text-center">Parsed Resume Output</h5>  
+            <div id="jsonOutput" class="json-output"></div>  
+         </div>  
+      </div>  
+   </div>
+
+   <!-- Search by skills -->
+   <h1 class="text-center mt-5">Candidate Search</h1>
+   <div class="row justify-content-center">  
+      <div class="col-md-8">  
+         <!-- Search Form -->
+         <div class="card mb-4">
+            <div class="card-header">Search Candidates by Skills</div>  
+            <div class="card-body">
+               <div class="mb-3">
+                  <label for="skills" class="form-label">Enter Skills (comma-separated):</label>
+                  <input type="text" id="skills" class="form-control" placeholder="e.g., Python, SQL, Java" />
+                  <button class="btn btn-primary w-100 mt-3" onclick="searchCandidates()">Search</button>
+               </div> 
+               <!-- Results Section -->
+               <div id="resultsContainer" class="mt-4">
+                  <h3>Results</h3>
+                  <!-- Results will be dynamically inserted here -->
+               </div>
+            </div>  
+         </div>
+      </div>   
+   </div>
+
+   <!-- CRUD Operations -->  
+   <h1 class="text-center mt-5">CRUD Operations on Candidates</h1>  
+    
+   <div class="row justify-content-center">  
+      <div class="col-md-8">  
+
+      <!-- Read Candidate's Resume -->  
+      <div class="card mb-4">  
+         <div class="card-header">Read Candidate's Resume</div>  
+         <div class="card-body">  
+            <form id="readCandidateForm">  
+                  <div class="mb-3">  
+                     <label for="readNameEmail" class="form-label">Enter Candidate's Name or Email</label>  
+                     <input type="text" class="form-control" id="readNameEmail" placeholder="Candidate Name or Email">  
+                  </div>  
+                  <div class="mb-3">  
+                     <label for="fieldsDropdown" class="form-label">Select Fields to Fetch</label>  
+                     <select class="form-select" id="fieldsDropdown" aria-label="Select fields to fetch">  
+                        <option value="all">All Fields</option>  
+                        <option value="Name">Name</option>  
+                        <option value="Contact Number">Contact Number</option>  
+                        <option value="Email Address">Email Address</option>  
+                        <option value="Education">Education (Highest degree)</option>  
+                        <option value="Current Company Name">Current Company Name</option>  
+                        <option value="Current Location">Current Location</option>  
+                        <option value="Primary Skills">Primary Skills</option>  
+                        <option value="Secondary Skills">Secondary Skills</option>  
+                        <option value="Total Experience">Total Experience (in years)</option>  
+                        <option value="Relevant Experience in Primary Skills">Relevant Experience in Primary Skills</option>  
+                        <option value="Relevant Experience in Secondary Skills">Relevant Experience in Secondary Skills</option>  
+                     </select>  
+                  </div>  
+                  <button type="button" class="btn btn-primary" onclick="readCandidate()">Read Resume</button>  
+            </form>  
+            <div id="readOutput" class="json-output mt-3"></div>  
+         </div>  
+      </div>
+  
+      <!-- Update Candidate's Details -->  
+      <div class="card mb-4">  
+         <div class="card-header">Update Candidate's Details</div>  
+         <div class="card-body">  
+            <form id="updateCandidateForm"> 
+               <div class="mb-3">  
+                  <label for="updateName" class="form-label">Enter Candidate's Name</label>  
+                  <input type="text" class="form-control" id="updateName" placeholder="Candidate Name">  
+               </div>  
+               <div class="mb-3">  
+                  <label for="updateDetails" class="form-label">Enter New Details (JSON format)</label>  
+                  <textarea class="form-control" id="updateDetails" rows="3" placeholder='{"email": "newemail@example.com", "skills": ["Python", "Java"]}'></textarea>  
+               </div>  
+               <button type="button" class="btn btn-primary" onclick="updateCandidate()">Update Candidate</button>  
+            </form>  
+            <div id="updateOutput" class="mt-3 text-success"></div>  
+         </div>  
+      </div>  
+  
+      <!-- Delete Candidate's Data -->  
+      <div class="card mb-4">  
+         <div class="card-header">Delete Candidate's Data</div>  
+         <div class="card-body">  
+            <form id="deleteCandidateForm">  
+               <div class="mb-3">  
+                  <label for="deleteNameEmail" class="form-label">Enter Candidate's Name or Email</label>  
+                  <input type="text" class="form-control" id="deleteNameEmail" placeholder="Candidate Name or Email">  
+               </div>  
+               <button type="button" class="btn btn-danger" onclick="deleteCandidate()">Delete Candidate</button>  
+            </form>  
+            <div id="deleteOutput" class="mt-3 text-danger"></div>  
+         </div>  
+      </div>    
+  
+   <!-- Best Fit Candidate Search -->
+   <h1 class="text-center mt-5">Find Best Fit Candidate</h1>
+   <div class="row justify-content-center">
+      <div class="col-md-8">
+         <div class="card mb-4">
+            <div class="card-header">Search Best Fit Candidates</div>
+            <div class="card-body">
+               <!-- Single Form for Inputs -->
+               <form id="bestFitCandidateForm" method="post" enctype="multipart/form-data">
+
+                  <!-- Job Level Dropdown -->
+                  <div class="mb-3">
+                     <label for="jobLevel" class="form-label">Select Job Level</label>
+                     <select class="form-select" id="jobLevel" name="jobLevel" aria-label="Select job level" required>
+                        <option value="Entry Level" selected>Entry Level</option>
+                        <option value="Mid Level">Mid Level</option>
+                        <option value="Senior Level">Senior Level</option>
+                     </select>
+                  </div>
+
+                  <!-- Job Description Input (Text Area) -->
+                  <div class="mb-3">
+                     <label for="jobDescription" class="form-label">Enter Job Description</label>
+                     <textarea class="form-control" id="jobDescription" name="jobDescription" rows="3" placeholder="Enter the job description here..."></textarea>
+                  </div>
+
+                  <!-- Job Description File Upload -->
+                  <div class="mb-3">
+                     <label for="file" class="form-label">Upload Job Description:</label>
+                     <input type="file" class="form-control" id="file" name="file" accept=".txt, .pdf, .docx">
+                  </div>
+
+                  <!-- Submit Button to Analyze -->
+                  <button type="submit" class="btn btn-primary w-100 mt-3">Find Best Fit Candidates</button>
+               </form>
+
+               <!-- Loading Spinner for Best Fit Candidate Search -->
+               <div id="bestFitLoadingSpinner" class="loading-spinner text-center mt-3" style="display: none;">
+                  <div class="spinner-border text-primary" role="status">
+                     <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p>Finding best candidates...</p>
+               </div>
+               <!-- Evaluation Output (best-fit results) -->
+               <div id="bestFitOutput" style="display: none;"></div>
+               
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Section 4: Clear MongoDB Collections Data -->
+   <div class="card mb-4">
+      <div class="card-header">Clear MongoDB Collections</div>
+      <div class="card-body">
+         <button type="button" class="btn btn-warning" id="clearResumesBtn" onclick="confirmDelete('resume_database')">Clear Resumes Collection</button>
+         <button type="button" class="btn btn-warning" id="clearEvaluationReportsBtn" onclick="confirmDelete('evaluation_reports')">Clear Evaluation Reports Collection</button>
+
+
+         <!-- Confirmation Modal for Deleting Collections -->
+         <div id="confirmModal" class="modal" tabindex="-1" style="display: none;">
+            <div class="modal-dialog">
+               <div class="modal-content">
+                  <div class="modal-header">
+                     <h5 class="modal-title">Confirm Deletion</h5>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                     <p id="confirmationMessage"></p>
+                  </div>
+                  <div class="modal-footer">
+                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                     <button type="button" id="confirmDeleteBtn" class="btn btn-danger" onclick="deleteCollection()">Yes, Delete</button>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         <!-- Output for Deletion Results -->
+         <div id="deletionOutput" class="json-output mt-3" style="display: none;"></div>
+      </div>
+   </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  
+
+<script>
+   function showFileName(type) {
+      if (type === 'file') {
+         const file = document.getElementById('fileUpload').files[0];
+         document.getElementById('fileName').innerText = file ? file.name : "No file selected";
+      } else if (type === 'folder') {
+         const folder = document.getElementById('folderUpload').files;
+         document.getElementById('folderName').innerText = folder.length > 0 ? folder.length + " files selected" : "No folder selected";
+      }
+   }
+
+   function startParsing() {
+      const file = document.getElementById('fileUpload').files[0];
+      const folder = document.getElementById('folderUpload').files;
+      const storeOption = document.getElementById('storeOption').value;
+
+      if (!file && folder.length === 0) {
+         alert("Please select a file or a folder to upload.");
+         return;
+      }
+
+      const formData = new FormData();
+      if (file) formData.append("file", file);
+      if (folder.length > 0) {
+         for (let i = 0; i < folder.length; i++) {
+            formData.append("files[]", folder[i]);
+         }
+      }
+
+      <!-- for max thread selection -->
+      document.querySelector('#uploadForm').addEventListener('submit', function (e) {
+         const maxThreads = document.querySelector('input[name="max_threads"]').value;
+         if (maxThreads < 1 || maxThreads > 32) {
+            alert("Number of threads must be between 1 and 32.");
+            e.preventDefault(); // Prevent form submission
+         }
+      });
+
+      formData.append("storeInMongoDB", storeOption);
+
+      document.getElementById('loadingSpinner').style.display = "block";
+      document.getElementById('output').style.display = "none";
+
+      // AJAX Request to Backend
+      fetch("/parse_resume", {
+         method: "POST",
+         body: formData
+      })
+         .then(response => {
+            if (!response.ok) {
+               throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+         })
+         .then(data => {
+            document.getElementById('loadingSpinner').style.display = "none";
+            document.getElementById('output').style.display = "block";
+            if (data.error) {
+               alert("Error: " + data.error);
+            } else {
+               document.getElementById('jsonOutput').textContent = JSON.stringify(data, null, 2);
+            }
+         })
+         .catch(error => {
+            document.getElementById('loadingSpinner').style.display = "none";
+            alert("An error occurred: " + error.message);
+         });
+   }
+
+   //============================== SEARCH CANDIDATES BY SKILLS ===============================
+
+   // Function to search candidates by skills
+   function searchCandidates() {
+      const skillsInput = document.getElementById('skills').value.trim();
+      const skills = skillsInput.split(',').map(skill => skill.trim().toLowerCase());
+
+      if (skills.length === 0 || skills[0] === "") {
+         alert('Please enter at least one skill.');
+         return;
+      }
+
+      // Call the Flask backend
+      axios.post('/search_by_skills', { skills: skills })
+         .then(response => {
+            if (response.data.status === 'success') {
+               displayResults(response.data.candidates);
+            }else {
+               alert('Error: ' + response.data.error);
+            }
+         })
+         .catch(error => {
+            console.error('Error fetching candidates:', error);
+            alert('An error occurred while searching for candidates.');
+         });
+   }
+
+   // Function to display search results
+   function displayResults(candidates) {
+      const resultsContainer = document.getElementById('resultsContainer');
+      resultsContainer.innerHTML = ''; // Clear previous results
+
+      if (candidates.length === 0) {
+         resultsContainer.innerHTML = '<p>No candidates found matching the provided skills.</p>';
+         return;
+      }
+
+      // Create a table for displaying candidates
+      const table = document.createElement('table');
+      table.classList.add('table', 'table-bordered', 'table-striped');
+
+      const thead = document.createElement('thead');
+      thead.innerHTML = `
+         <tr>
+            <th>S.No.</th>
+            <th>Name</th>
+            <th>Primary Skills</th>
+            <th>Secondary Skills</th>
+            <th>Experience in Skills</th>
+         </tr>
+      `;
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      candidates.forEach((candidate, index) => {
+         const tr = document.createElement('tr');
+
+         // Format primary and secondary skills (comma-separated strings)
+         const primarySkills = candidate['Primary Skills'] || 'N/A';
+         const secondarySkills = candidate['Secondary Skills'] || 'N/A';
+
+         // Format experience as a readable string
+         const experience = candidate['Experience in Skills']
+            ? Object.entries(candidate['Experience in Skills'])
+                  .map(([skill, years]) => `${skill}: ${years} years`)
+                  .join('<br>')
+            : 'N/A';
+
+         tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${candidate.Name || 'N/A'}</td>
+            <td>${primarySkills}</td>
+            <td>${secondarySkills}</td>
+            <td>${experience}</td>
+         `;
+
+         tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      resultsContainer.appendChild(table);
+   }
+   
+
+   //====================== CRUD FUNCTIONS ===========================================
+
+   //function to read resume of candidates
+   function readCandidate() {  
+      const candidate = document.getElementById('readNameEmail').value.trim();  
+      const selectedField = document.getElementById('fieldsDropdown').value;  
+      
+      // Prepare data for AJAX request
+      const data = { 
+          name_email: candidate,
+          fields: selectedField === 'all' ? 'all' : [selectedField] // Send 'all' or specific fields as an array
+      };  
+  
+      if (!candidate) {
+          alert("Please enter a name or email to search for a candidate.");
+          return;
+      }
+  
+      // Send AJAX request to Flask  
+      $.ajax({  
+          url: '/read_candidate',  
+          type: 'POST',  
+          data: JSON.stringify(data),  
+          contentType: 'application/json',  
+          success: function(response) {  
+              if (response.status === 'not_found') {
+                  document.getElementById('readOutput').style.display = 'block';  
+                  document.getElementById('readOutput').innerText = "No candidate found with the provided details.";
+              } else if (response.status === 'success') {
+                  document.getElementById('readOutput').style.display = 'block';  
+                  document.getElementById('readOutput').innerText = JSON.stringify(response.data, null, 4);  
+              } else {
+                  alert("Unexpected response received. Please try again.");
+              }
+          },  
+          error: function(error) {  
+              console.error("Error reading candidate:", error);  
+              if (error.status === 404) {
+                  alert("No candidate found with the provided details.");
+              } else if (error.status === 400) {
+                  alert("Invalid request. Please check your input.");
+              } else {
+                  alert("An error occurred while reading the candidate's data. Please try again.");
+              }
+          }  
+      });  
+   }
+
+   //update candidate
+   function updateCandidate() {  
+      const candidateName = document.getElementById('updateName').value;  
+      const newDetails = document.getElementById('updateDetails').value;  
+  
+      // Send AJAX request to Flask  
+      $.ajax({  
+        url: '/update_candidate',  
+        type: 'POST',  
+        data: JSON.stringify({ name: candidateName, details: JSON.parse(newDetails) }),  
+        contentType: 'application/json',  
+        success: function(response) {  
+           document.getElementById('updateOutput').innerText = response.message;  
+        },  
+        error: function(error) {  
+           console.error("Error updating candidate:", error);  
+           alert("An error occurred while updating the candidate's data. Please try again.");  
+        }  
+      });  
+   } 
+
+   //delete candidate
+   function deleteCandidate() {  
+      const candidateNameEmail = document.getElementById('deleteNameEmail').value;  
+  
+      // Send AJAX request to Flask  
+      $.ajax({  
+        url: '/delete_candidate',  
+        type: 'POST',  
+        data: JSON.stringify({ name_email: candidateNameEmail }),  
+        contentType: 'application/json',  
+        success: function(response) {  
+           document.getElementById('deleteOutput').innerText = response.message;  
+        },  
+        error: function(error) {  
+           console.error("Error deleting candidate:", error);  
+           alert("An error occurred while deleting the candidate's data. Please try again.");  
+        }  
+      });  
+   }  
+
+   //insert candidate
+   function insertCandidate() {  
+      const candidateData = document.getElementById('insertDetails').value;  
+  
+      // Send AJAX request to Flask  
+      $.ajax({  
+        url: '/insert_candidate',  
+        type: 'POST',  
+        data: JSON.stringify(JSON.parse(candidateData)),  
+        contentType: 'application/json',  
+        success: function(response) {  
+           document.getElementById('insertOutput').innerText = response.message;  
+        },  
+        error: function(error) {  
+           console.error("Error inserting candidate:", error);  
+           alert("An error occurred while inserting the candidate's data. Please try again.");  
+        }  
+      });  
+   }  
+
+   //====================================== BEST FIT CANDIDATES SEARCH ===========================================================
+
+   // Attach the findBestFitCandidates function to the form's submit event
+   document.getElementById('bestFitCandidateForm').addEventListener('submit', function (event) {
+      event.preventDefault(); // Prevent the default form submission
+      findBestFitCandidates(); // Call the function to handle the form submission
+   });
+  
+   function findBestFitCandidates() {
+      console.log("findBestFitCandidates function triggered.");
+      const jobLevel = document.getElementById('jobLevel').value.trim();
+      const jobDescription = document.getElementById('jobDescription').value.trim();
+      const fileInput = document.getElementById('file');
+   
+      // Ensure at least one input is provided: file or job description
+      if (!jobDescription && fileInput.files.length === 0) {
+         displayError("Please provide a Job Description or upload a file.");
+         return;
+      }
+  
+      document.getElementById('bestFitLoadingSpinner').style.display = 'block';
+      document.getElementById('bestFitLoadingSpinner').setAttribute('aria-busy', 'true');
+      document.getElementById('bestFitOutput').style.display = 'none';
+  
+      const formData = new FormData();
+      formData.append('jobLevel', jobLevel);
+  
+      if (jobDescription) {
+         formData.append('jobDescription', jobDescription);
+      }
+  
+      if (fileInput.files.length > 0) {
+         formData.append('file', fileInput.files[0]);
+      }
+
+      for (let [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+      }
+
+      $.ajax({
+         url: "http://127.0.0.1:5000/api/find_best_fit_candidates",
+         type: "POST",
+         data: formData,
+         contentType: false,
+         processData: false,
+         success: function (response) {
+            document.getElementById('bestFitLoadingSpinner').style.display = 'none';
+            document.getElementById('bestFitLoadingSpinner').setAttribute('aria-busy', 'false');
+  
+            if (response && response.evaluation_report) {
+               const bestFitOutput = document.getElementById('bestFitOutput');
+               const formattedTimestamp = response.timestamp
+               ? new Date(response.timestamp).toLocaleString()
+               : "Not Available";
+  
+               bestFitOutput.innerHTML = `
+                  <h3>Evaluation Report</h3>
+                  <p><strong>Job Level:</strong> ${response.job_level || "Not provided"}</p>
+                  <p><strong>Job Description:</strong> ${response.job_description?.replace(/\n/g, '<br>') || "Extracted from file"}</p>
+                  <div class="scrollable-box">
+                     <strong>Evaluation Report:</strong>
+                     <div>${response.evaluation_report.replace(/\n/g, '<br>')}</div>
+                  </div>
+                  <p><strong>Timestamp:</strong> ${formattedTimestamp}</p>
+                  `;
+                  bestFitOutput.style.display = 'block';
+               } else {
+                  displayError("No evaluation report available in the response.");
+            }
+         },
+         error: function (xhr, status, error) {
+            document.getElementById('bestFitLoadingSpinner').style.display = 'none';
+            document.getElementById('bestFitLoadingSpinner').setAttribute('aria-busy', 'false');
+            const errorMessage = xhr.responseJSON?.error || error || "An unknown error occurred.";
+            displayError(`An error occurred: ${errorMessage}`);
+         }
+      });
+   }
+   function displayError(message) {
+      const bestFitOutput = document.getElementById('bestFitOutput');
+      bestFitOutput.innerHTML = `<p class="text-warning" role="alert">${message}</p>`;
+      bestFitOutput.style.display = 'block';
+   }
+   
+   //============================== CLEAR COLLECTION ====================================================
+
+  // Function to confirm deletion
+   function confirmDelete(collection) {
+      // Set the collection name in the confirm button's data-collection attribute
+      const confirmButton = document.getElementById('confirmDeleteBtn');
+      confirmButton.setAttribute('data-collection', collection);
+
+      // Update the confirmation message dynamically
+      const confirmationMessage = document.getElementById('confirmationMessage');
+      confirmationMessage.innerText = `Are you sure you want to delete all records from the ${collection} collection?`;
+
+      // Show the modal for confirmation
+      $('#confirmModal').modal('show');
+   }
+
+   // Function to delete the selected collection
+   function deleteCollection() {
+      // Get the collection to delete from the data-collection attribute
+      const collection = document.getElementById('confirmDeleteBtn').getAttribute('data-collection');
+      
+      // Send AJAX request to Flask for collection deletion
+      $.ajax({
+         url: '/clear_collection',  // Flask endpoint
+         type: 'POST',
+         contentType: 'application/json',
+         data: JSON.stringify({ collection: collection }),
+         success: function(response) {
+            // Hide the modal and show deletion result
+            $('#confirmModal').modal('hide');
+            document.getElementById('deletionOutput').style.display = 'block';
+            document.getElementById('deletionOutput').innerText = `${response.deletedCount} records deleted from the ${collection} collection.`;
+         },
+         error: function(error) {
+            console.error("Error clearing collection:", error);
+            alert("An error occurred while deleting the collection. Please try again.");
+         }
+      });
+   }
+
+</script> 
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>  
+
+</body>  
+</html>

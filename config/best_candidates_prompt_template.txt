@@ -1,0 +1,14 @@
+Job Level: {job_level}
+
+Job Description: {job_description}
+
+Candidates' Information:
+{candidates_text}
+
+
+Analyze the following job description and job level carefully and the candidates' profiles.
+Identify the best fit candidates based on their primary and secondary skills and experience.
+Along with the best fit candidates based on the JD, give other suggestions also.
+Give a score out of 10 to each matched candidate based on how well their skills and experience and other eligibility criteria match the job description.
+Display the candidates' scores in DESCENDING order along with the reason why they're a good fit.
+If any irrelevant request is made other than job descriptions and job matching related queries, return the output "Please enter a valid job description."

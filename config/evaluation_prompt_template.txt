@@ -1,0 +1,63 @@
+Job Level: {job_level}
+
+Job Description: {job_description}
+
+Candidates' Information:
+{candidates_text}
+
+Task: Analyze the job description and candidates' resumes for the specified role/position. Evaluate their profiles to identify top candidates based on their primary and secondary skills, relevant experience, and alignment with job requirements.
+
+MAIN TASK: Use the following template to generate an evaluation report for top candidates. Ensure that for each score, you include specific reasons and examples from the candidate's profile. Highlight strengths and gaps with actionable insights.
+
+Template Instructions:
+
+Candidate Information:
+- Extract the candidate’s Name, Position Applied For, and Experience Level. If not explicitly mentioned, infer based on the provided details. 
+- For experience, analyze any dates or timelines mentioned in the resume, focusing on the projects or roles undertaken by the candidate. Calculate the total years of experience in the relevant domain by summing up the duration of each role.
+
+Positive Matches:
+- Identify key strengths and align them with job responsibilities:
+  - Core Skills or Technologies: Match skills (e.g., programming languages, software tools, certifications) with job requirements. Include examples from the resume that support the score.
+  - Domain Expertise: Highlight relevant industry knowledge and specific project experience, referencing details from the resume.
+  - Technical Skills: Emphasize tools, technologies, and programming languages listed in the job description, with examples of usage or projects where applicable.
+
+Gaps and Concerns:
+- Explain specific areas where the candidate’s skills or experience do not meet job requirements. Provide reasons for any deductions in scores:
+  - Specific Skill Gaps: List key skills missing in the resume that are critical for the role.
+  - Relevant Experience Gaps: Discuss missing or unclear professional experience. Example: "Candidate has knowledge of XYZ but lacks practical implementation experience."
+  - Soft Skills Gaps: Identify missing competencies like teamwork, communication, or leadership.
+
+Scoring Rubric (Include Reasons for Scores):
+- Provide scores based on the following breakdown, explicitly mentioning the reasons for each score:
+  - Core Skills Alignment (40%): Example: "9/10 - Proficient in React, Python, and Kubernetes as required, but lacks exposure to advanced CI/CD tools."
+  - Technical Skills Alignment (30%): Example: "8/10 - Demonstrates familiarity with databases and APIs but lacks hands-on experience with MongoDB."
+  - Relevant Experience (30%): Example: "7/10 - NA for professional experience, but internships suggest some practical exposure."
+
+- Define scoring anchors:
+  - 10/10: Fully meets or exceeds all criteria with strong examples.
+  - 8/10: Meets most criteria but has minor gaps.
+  - 6/10: Meets basic criteria but has significant gaps or lacks practical examples.
+
+Conclusion:
+- Summarize the candidate's fit for the role:
+  - Provide reasons for the overall score (e.g., "The candidate demonstrates strong alignment with required skills but lacks demonstrable project experience").
+  - Assign a rating (e.g., Excellent Fit, Good Match, Adequate Fit) with clear justification.
+
+Comparison of Top Candidates:
+- Compare candidates with reasons for why one stands out over others:
+  - Highlight specific strengths and gaps that set each candidate apart.
+  - Ensure fair and consistent evaluation using the scoring rubric.
+
+Actionable Recommendations:
+- Provide personalized suggestions for each candidate to address gaps or enhance their profiles (e.g., "Build a GitHub portfolio to showcase coding abilities" or "Obtain AWS certification to strengthen cloud expertise").
+
+Example Output:
+Candidate Name: Lalit Kaushik  
+Position Applied For: Full Stack Magento Developer  
+Experience Level: Over 13 years of experience as a Full Stack Magento 2 certified developer.  
+Core Skills Alignment: 9/10 - Proficient in Magento 2 and JavaScript frameworks, but lacks exposure to Python.  
+Technical Skills Alignment: 8/10 - Familiarity with front-end and back-end frameworks but needs more cloud integration expertise.  
+Relevant Experience: 10/10 - 13+ years of direct experience in the required domain.  
+Overall Score: 9.1/10  
+
+Conclusion: Excellent Fit - Lalit’s profile aligns closely with job requirements, with extensive experience in Magento development and robust technical expertise.  
